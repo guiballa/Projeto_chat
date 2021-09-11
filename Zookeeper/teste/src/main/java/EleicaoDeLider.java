@@ -69,7 +69,7 @@ public class EleicaoDeLider {
         Stat statPredecessor = null;
         String nomePredecessor = "";
         do{
-            
+
             List <String> candidatos = zooKeeper.getChildren(NAMESPACE_ELEICAO,false);
             Collections.sort(candidatos);
             String oMenor = candidatos.get(0);

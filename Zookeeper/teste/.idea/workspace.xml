@@ -7,8 +7,6 @@
     <list default="true" id="475ce75e-daac-48c6-b0e5-f99d423f26ad" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/EleicaoDeLider.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/EleicaoDeLider.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/20212_maua_ecm516_zookeeper_eleicao_de_lider-1.0-SNAPSHOT-jar-with-dependencies.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/20212_maua_ecm516_zookeeper_eleicao_de_lider-1.0-SNAPSHOT-jar-with-dependencies.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/20212_maua_ecm516_zookeeper_eleicao_de_lider-1.0-SNAPSHOT.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/20212_maua_ecm516_zookeeper_eleicao_de_lider-1.0-SNAPSHOT.jar" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
