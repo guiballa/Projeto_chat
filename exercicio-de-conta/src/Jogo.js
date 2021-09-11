@@ -109,6 +109,7 @@ export default class Jogo extends Component {
                             key={indice.toString()}
                             label={alternativa?.toString()}
                             className={`${styles.valor} ${styles.alternativa}`}
+                            onClick={this.iniciarRodada}
                             />
                     ))
                 }
