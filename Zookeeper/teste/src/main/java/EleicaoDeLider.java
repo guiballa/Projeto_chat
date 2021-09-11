@@ -5,6 +5,7 @@ import static java.util.Collections.sort;
 import static org.apache.zookeeper.Watcher.Event.EventType.None;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 public class EleicaoDeLider {
@@ -22,7 +23,8 @@ public class EleicaoDeLider {
         EleicaoDeLider eleicaoDeLider = new EleicaoDeLider();
         eleicaoDeLider.conectar();
         eleicaoDeLider.realizarCandidatura();
-        eleicaoDeLider.elegerLider();
+        eleicaoDeLider.eleicaoEReeleicao();
+        //eleicaoDeLider.elegerLider();
         //eleicaoDeLider.registrarWatcher();
         eleicaoDeLider.executar();
         eleicaoDeLider.fechar();
@@ -35,6 +37,7 @@ public class EleicaoDeLider {
                 case NodeDeleted:
                     //Lider pode ter se tornado inoperante.
                     //Nova eleicao
+                    eleicaoEReeleicao();
                     break;
             }
 
@@ -61,6 +64,31 @@ public class EleicaoDeLider {
             zooKeeper.wait();
         }
     }
+
+    public void eleicaoEReeleicao() throws InterruptedException, KeeperException{
+        Stat statPredecessor = null;
+        String nomePredecessor = "";
+        do{
+            
+            List <String> candidatos = zooKeeper.getChildren(NAMESPACE_ELEICAO,false);
+            Collections.sort(candidatos);
+            String oMenor = candidatos.get(0);
+            if (oMenor.equals(nomeDoZNodeDesseProcesso)){
+                System.out.printf("Me chamo %s e sou o lider.\n", nomeDoZNodeDesseProcesso);
+                return;
+            }
+            System.out.printf("Me chama %s e não sou o lider. O lider é o %s\n", nomeDoZNodeDesseProcesso, oMenor);
+            int indicePredecessor = Collections.binarySearch(candidatos, nomeDoZNodeDesseProcesso) -1;
+            nomePredecessor = candidatos.get(indicePredecessor);
+            zooKeeper.exists(
+                    String.format("%s/%s", NAMESPACE_ELEICAO, nomePredecessor),
+                    reeleicaoWatcher
+            );
+        } while (statPredecessor == null);
+        System.out.printf("Estou observando o %s\n", nomePredecessor);
+    }
+
+
 
     public void elegerLider() throws KeeperException, InterruptedException {
         //obter a lista de filhos do Znode / eleição
