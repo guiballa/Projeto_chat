@@ -45,21 +45,22 @@ public class Chat {
     //também verifica se o nome escolhido tem o caractere /
     //quando um nome válido for digitado, ele é atribuído à variável de instância usuário
     //deve criar um ZNode efêmero para representar o usuário
-    private void capturaUsuario () throws InterruptedException, KeeperException{
+    private void capturaUsuario () throws InterruptedException, KeeperException, IllegalArgumentException {
         //seu código aqui
         System.out.println("Digite o nome de usuário: ");
         usuario = scanner.nextLine();
-        if(!usuarioJaExiste(usuario)) {
-            if (!usuario.contains("/")) {
-                this.usuario = usuario;
-                String prefix = String.format("%s/%s", ZNODE_USUARIOS,usuario);
-                zooKeeper.create(prefix, new byte[]{}, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
-                System.out.printf ("Oi, %s. Você entrou. Veja o que já aconteceu até então.\n", usuario);
+        if(usuarioJaExiste(usuario)) {
+            if (usuario.contains("/")) {
+                System.out.println("Nome não pode conter o caractere /");
+                throw new IllegalArgumentException();
             }
-            System.out.println("Nome não pode conter o caractere /");
+            System.out.println("Usuario já está logado");
+            throw new IllegalArgumentException();
         }
-        System.out.println("Usuario já está logado");
-
+        this.usuario = usuario;
+        String prefix = String.format("%s/%s", ZNODE_USUARIOS,usuario);
+        zooKeeper.create(prefix, new byte[]{}, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+        System.out.printf ("Oi, %s. Você entrou. Veja o que já aconteceu até então.\n", usuario);
     }
 
     //verifica se o nome de usuário especificado possui um ZNode na árvore do ZKeeper
@@ -116,7 +117,7 @@ public class Chat {
 
         String opcao = "";
         //exibir instruções
-        System.out.println (instrucoes);
+        exibirInstrucoes();
         //capturar opcao do usuário
         opcao = scanner.nextLine();
         while (!opcao.equals("/exit")){
@@ -124,7 +125,7 @@ public class Chat {
             if (opcao.startsWith("/list")){
                 //seu código aqui
                 exibirHistorico();
-                System.out.println (instrucoes);
+                exibirInstrucoes();
             }
             //send
             else if (opcao.startsWith("/send")){
@@ -157,11 +158,23 @@ public class Chat {
     private void registrarWatchers() throws InterruptedException, KeeperException{
         //registrar watcher persistente e recursivo no ZNode /usuarios
         //use o método addWatch
+        try {
+            zooKeeper.addWatch(ZNODE_USUARIOS,AddWatchMode.PERSISTENT_RECURSIVE);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
 
         //registrar um one-time trigger watch no ZNode /chat
         //use getChildren.
         //Use o watch historicoWatcher implementado logo a seguir
-        zooKeeper.getChildren(ZNODE_CHAT, historicoWatcher);
+
+
+        Stat stat = zooKeeper.exists(ZNODE_CHAT, historicoWatcher);
+        if(stat != null){
+            byte [] bytes = zooKeeper.getData(ZNODE_CHAT, historicoWatcher, stat);
+            String dados = bytes != null ? new String(bytes) : "";
+            List <String> filhos = zooKeeper.getChildren(ZNODE_CHAT, historicoWatcher);
+        }
 
     }
     private  final Watcher historicoWatcher = new Watcher() {
@@ -184,7 +197,7 @@ public class Chat {
 
     private void exibirInstrucoes (){
         //um simples println para exibir as instruções
-
+        System.out.println (instrucoes);
     }
 
 
@@ -204,7 +217,7 @@ public class Chat {
         chat.criarNosRaizes();
         chat.capturaUsuario();
         chat.exibirHistorico();
-        //chat.registrarWatchers();
+        chat.registrarWatchers();
         chat.executar();
         chat.fechar();
     }
