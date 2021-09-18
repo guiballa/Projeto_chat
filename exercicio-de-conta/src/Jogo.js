@@ -65,7 +65,8 @@ export default class Jogo extends Component {
     }
 
     componentDidMount(){
-        this.iniciarRodada()
+        if (this.props.status === 'on')
+            this.iniciarRodada()
     }
 
     componentWillUnmount(){
@@ -109,7 +110,10 @@ export default class Jogo extends Component {
                             key={indice.toString()}
                             label={alternativa?.toString()}
                             className={`${styles.valor} ${styles.alternativa}`}
-                            onClick={this.iniciarRodada}
+                            onClick={() => {
+                                this.iniciarRodada()
+                                this.props.fAtualizarPontuacao(this.state.resultado === alternativa )
+                            }}
                             />
                     ))
                 }

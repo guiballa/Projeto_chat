@@ -12,6 +12,7 @@ import Cartao from './Cartao'
 import Botoes from './Botoes'
 import Jogo from './Jogo'
 import Mensagem from './Mensagem'
+import GraficoLinha from './GraficoLinha'
 
 
 
@@ -86,12 +87,20 @@ export default class App extends Component {
                             fZerar={() => this.zerarPontuacao()}
                             className='mt-5'
                             />
+                            {/* {`Acertos: ${this.state.acertos}`}
+                            {`Erros: ${this.state.erros}`} */}
                     </Cartao>
                 </div>
                 <div className="col-12 lg:col-6">
                     <Cartao 
                         titulo='Sua pontuação'
                         className='h-18rem'>
+                            <GraficoLinha
+                                acertos={this.state.acertos}
+                                erros={this.state.erros}
+                                contador={this.state.contador}
+                                zerar={(this.state.acertos === 0 && this.state.erros === 0)}
+                            />
 
                     </Cartao>
                 </div>
