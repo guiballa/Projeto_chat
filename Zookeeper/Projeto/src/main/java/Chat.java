@@ -140,6 +140,7 @@ public class Chat {
                 zooKeeper.setData(nodeData, (this.usuario+": "+msg).getBytes(),-1);
                 //zooKeeper.setData(nodeData, String.format("{}: {}",this.usuario,msg).getBytes(),-1);
                 exibirHistorico();
+                exibirInstrucoes();
             }
             else{
                 System.out.println("Opção inválida.");
@@ -217,7 +218,7 @@ public class Chat {
         chat.criarNosRaizes();
         chat.capturaUsuario();
         chat.exibirHistorico();
-        chat.registrarWatchers();
+        //chat.registrarWatchers();
         chat.executar();
         chat.fechar();
     }
