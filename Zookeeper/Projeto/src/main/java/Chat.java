@@ -1,6 +1,7 @@
 import org.apache.zookeeper.*;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -47,20 +48,23 @@ public class Chat {
     //deve criar um ZNode efêmero para representar o usuário
     private void capturaUsuario () throws InterruptedException, KeeperException, IllegalArgumentException {
         //seu código aqui
-        System.out.println("Digite o nome de usuário: ");
-        usuario = scanner.nextLine();
-        if(usuarioJaExiste(usuario)) {
-            if (usuario.contains("/")) {
-                System.out.println("Nome não pode conter o caractere /");
-                throw new IllegalArgumentException();
+        while (true){
+            System.out.println("Digite o nome de usuário: ");
+            usuario = scanner.nextLine();
+            if(!usuarioJaExiste(usuario)) {
+                if (!usuario.contains("/")) {
+                    this.usuario = usuario;
+                    String prefix = String.format("%s/%s", ZNODE_USUARIOS,usuario);
+                    zooKeeper.create(prefix, new byte[]{}, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+                    System.out.printf ("Oi, %s. Você entrou. Veja o que já aconteceu até então.\n", usuario);
+                    break;
+                } else {
+                    System.out.println("Nome não pode conter o caractere /");
+                }
+            } else {
+                System.out.println("Usuario já está logado");
             }
-            System.out.println("Usuario já está logado");
-            throw new IllegalArgumentException();
         }
-        this.usuario = usuario;
-        String prefix = String.format("%s/%s", ZNODE_USUARIOS,usuario);
-        zooKeeper.create(prefix, new byte[]{}, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
-        System.out.printf ("Oi, %s. Você entrou. Veja o que já aconteceu até então.\n", usuario);
     }
 
     //verifica se o nome de usuário especificado possui um ZNode na árvore do ZKeeper
@@ -103,12 +107,14 @@ public class Chat {
             //formatar e exibir no padrão data: Usuário diz Oi, Tudo bem?
             //seu código aqui
             String dataFormatada = formatDate(Long.valueOf(data));
-            String dados = new String(zooKeeper.getData(ZNODE_CHAT+"/"+data,null,new Stat()));
-            String mensagem = dados.split(": ")[1];
-            String usuario = dados.split(": ")[0];
-            System.out.printf("%s: %s diz %s\n",dataFormatada,usuario,mensagem);
-            //System.out.println(String.format("{}: {} diz {}",dataFormatada,usuario,mensagem ));
-            System.out.println("************************");
+            String dados = new String(zooKeeper.getData(ZNODE_CHAT+"/"+data,historicoWatcher, new Stat()));
+            if(dados.length()>2){
+                String mensagem = dados.split(": ")[1];
+                String usuario = dados.split(": ")[0];
+                System.out.printf("%s: %s diz %s\n",dataFormatada,usuario,mensagem);
+                //System.out.println(String.format("{}: {} diz {}",dataFormatada,usuario,mensagem ));
+                System.out.println("************************");
+            }
         }
     }
 
@@ -136,11 +142,9 @@ public class Chat {
                 //seu conteúdo pode ser algo como usuario:mensagem
                 String msg = opcao.substring(opcao.indexOf(" ") + 1);
                 String dataAtual = String.valueOf(new Date().getTime());
-                String nodeData = zooKeeper.create(ZNODE_CHAT+"/"+dataAtual, new byte[]{}, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                zooKeeper.setData(nodeData, (this.usuario+": "+msg).getBytes(),-1);
+                String nodeData = zooKeeper.create(ZNODE_CHAT+"/"+dataAtual, (this.usuario+": "+msg).getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                //zooKeeper.setData(nodeData, (this.usuario+": "+msg).getBytes(),-1);
                 //zooKeeper.setData(nodeData, String.format("{}: {}",this.usuario,msg).getBytes(),-1);
-                exibirHistorico();
-                exibirInstrucoes();
             }
             else{
                 System.out.println("Opção inválida.");
@@ -160,7 +164,17 @@ public class Chat {
         //registrar watcher persistente e recursivo no ZNode /usuarios
         //use o método addWatch
         try {
-            zooKeeper.addWatch(ZNODE_USUARIOS,AddWatchMode.PERSISTENT_RECURSIVE);
+            zooKeeper.addWatch(ZNODE_USUARIOS,event -> {
+                String path = event.getPath();
+                String nome = path.substring(path.lastIndexOf("/")+1);
+                Watcher.Event.EventType tipo = event.getType();
+                if(tipo == NodeCreated ){
+                    System.out.printf("%s entrou\n", nome);
+                };
+                if(tipo == NodeDeleted ){
+                    System.out.printf("%s saiu\n", nome);
+                };
+            },AddWatchMode.PERSISTENT_RECURSIVE);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -170,12 +184,11 @@ public class Chat {
         //Use o watch historicoWatcher implementado logo a seguir
 
 
-        Stat stat = zooKeeper.exists(ZNODE_CHAT, historicoWatcher);
-        if(stat != null){
-            byte [] bytes = zooKeeper.getData(ZNODE_CHAT, historicoWatcher, stat);
-            String dados = bytes != null ? new String(bytes) : "";
-            List <String> filhos = zooKeeper.getChildren(ZNODE_CHAT, historicoWatcher);
-        }
+//        Stat stat = zooKeeper.exists(ZNODE_CHAT, historicoWatcher);
+//        if(stat != null){
+//            zooKeeper.getChildren(ZNODE_CHAT, historicoWatcher);
+//        }
+        zooKeeper.getChildren(ZNODE_CHAT, historicoWatcher);
 
     }
     private  final Watcher historicoWatcher = new Watcher() {
@@ -218,7 +231,7 @@ public class Chat {
         chat.criarNosRaizes();
         chat.capturaUsuario();
         chat.exibirHistorico();
-        //chat.registrarWatchers();
+        chat.registrarWatchers();
         chat.executar();
         chat.fechar();
     }
